@@ -135,7 +135,7 @@ export default function Dashboard() {
           .map((m) => m.employee.name)
           .filter(Boolean);
 
-        return {
+        const eventObj = {
           id: assignment.id,
           start: assignment.date,
           allDay: true,
@@ -153,6 +153,11 @@ export default function Dashboard() {
             rawAssignment: assignment,
           },
         };
+
+        // Log para debug
+        console.log('Event created:', eventObj);
+
+        return eventObj;
       });
 
       successCallback(events);
@@ -236,24 +241,60 @@ export default function Dashboard() {
 
     const shiftLabel = shiftLabels[shift] || shift;
 
+    // Log para debug
+    console.log('Rendering event:', { worksiteName, pairLabel, shift, shiftLabel });
+
     return (
-      <div className="p-1 space-y-0.5 cursor-pointer hover:opacity-90 transition-opacity">
-        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-white/90 text-slate-800">
+      <div className="fc-event-main-frame" style={{ padding: '2px 4px' }}>
+        <div style={{ 
+          display: 'inline-block',
+          padding: '2px 6px',
+          marginBottom: '2px',
+          borderRadius: '3px',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          color: '#1e293b',
+          fontSize: '10px',
+          fontWeight: 600
+        }}>
           {shiftLabel}
         </div>
-        <div className="text-xs font-semibold text-white truncate">
+        <div style={{ 
+          fontSize: '12px', 
+          fontWeight: 600,
+          color: '#ffffff',
+          marginBottom: '1px',
+          textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+        }}>
           {worksiteName}
         </div>
-        <div className="text-[11px] text-white/90 truncate">
+        <div style={{ 
+          fontSize: '11px',
+          color: '#ffffff',
+          opacity: 0.95,
+          textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+        }}>
           {pairLabel}
         </div>
         {members && members.length > 0 && (
-          <div className="text-[10px] text-white/80 truncate">
+          <div style={{ 
+            fontSize: '10px',
+            color: '#ffffff',
+            opacity: 0.85,
+            marginTop: '1px',
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+          }}>
             {members.join(", ")}
           </div>
         )}
         {note && (
-          <div className="text-[10px] text-white/70 italic truncate">
+          <div style={{ 
+            fontSize: '10px',
+            color: '#ffffff',
+            opacity: 0.8,
+            fontStyle: 'italic',
+            marginTop: '1px',
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+          }}>
             {note}
           </div>
         )}

@@ -60,6 +60,7 @@
   border-style: solid;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 80px !important;
 }
 
 .fc .fc-event:hover {
@@ -70,7 +71,16 @@
 
 .fc .fc-daygrid-event {
   padding: 4px 6px;
-  white-space: normal;
+  white-space: normal !important;
+  min-height: 80px !important;
+}
+
+.fc .fc-daygrid-event-harness {
+  margin-bottom: 3px !important;
+}
+
+.fc .fc-event-main {
+  color: inherit;
 }
 
 .fc .fc-daygrid-day-frame {
@@ -82,6 +92,6 @@
   margin-top: 2px;
 }
 
-.fc .fc-daygrid-event-harness {
-  margin-bottom: 2px;
+.fc .fc-event-title {
+  font-weight: 600;
 }
