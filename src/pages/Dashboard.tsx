@@ -259,10 +259,7 @@ export default function Dashboard() {
   };
 
   const renderEventContent = (arg: any) => {
-    console.log('renderEventContent called with:', arg);
-    console.log('Event extendedProps:', arg.event.extendedProps);
-    
-    const { shift, worksiteName, pairLabel, members, note } = arg.event.extendedProps;
+    const { shift, pairLabel, members } = arg.event.extendedProps;
     
     const shiftLabels: Record<string, string> = {
       MORNING: "Manhã",
@@ -271,66 +268,25 @@ export default function Dashboard() {
     };
 
     const shiftLabel = shiftLabels[shift] || shift;
+    const membersText = members && members.length > 0 ? members.join(", ") : "";
 
-    console.log('Rendering event content:', { worksiteName, pairLabel, shift, shiftLabel, members, note });
-
-    // Retornar objeto simples para FullCalendar v6
     return {
       html: `
-        <div style="padding: 4px; height: 100%; display: flex; flex-direction: column; gap: 2px;">
-          <div style="
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 3px;
-            background-color: rgba(255, 255, 255, 0.95);
-            color: #1e293b;
-            font-size: 10px;
-            font-weight: 600;
-            margin-bottom: 2px;
-          ">
-            ${shiftLabel}
-          </div>
-          <div style="
-            font-size: 12px;
-            font-weight: 600;
-            color: #ffffff;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-            line-height: 1.2;
-          ">
-            ${worksiteName}
-          </div>
-          <div style="
-            font-size: 11px;
-            color: #ffffff;
-            opacity: 0.95;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-            line-height: 1.2;
-          ">
-            ${pairLabel}
-          </div>
-          ${members && members.length > 0 ? `
-            <div style="
-              font-size: 10px;
-              color: #ffffff;
-              opacity: 0.85;
-              text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-              line-height: 1.1;
-            ">
-              ${members.join(", ")}
-            </div>
-          ` : ''}
-          ${note ? `
-            <div style="
-              font-size: 9px;
-              color: #ffffff;
-              opacity: 0.8;
-              font-style: italic;
-              text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-              line-height: 1.1;
-            ">
-              ${note}
-            </div>
-          ` : ''}
+        <div style="
+          padding: 2px 4px;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          font-size: 11px;
+          font-weight: 500;
+          color: #ffffff;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+          line-height: 1.2;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        ">
+          ${pairLabel} – ${shiftLabel}${membersText ? ` – ${membersText}` : ''}
         </div>
       `
     };
