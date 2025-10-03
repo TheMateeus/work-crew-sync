@@ -135,7 +135,7 @@ export default function Dashboard() {
           .map((m) => m.employee.name)
           .filter(Boolean);
 
-        const eventObj = {
+        return {
           id: assignment.id,
           start: assignment.date,
           allDay: true,
@@ -153,11 +153,6 @@ export default function Dashboard() {
             rawAssignment: assignment,
           },
         };
-
-        // Log para debug
-        console.log('Event created:', eventObj);
-
-        return eventObj;
       });
 
       successCallback(events);
@@ -231,6 +226,9 @@ export default function Dashboard() {
   };
 
   const renderEventContent = (arg: any) => {
+    console.log('renderEventContent called with:', arg);
+    console.log('Event extendedProps:', arg.event.extendedProps);
+    
     const { shift, worksiteName, pairLabel, members, note } = arg.event.extendedProps;
     
     const shiftLabels: Record<string, string> = {
@@ -241,65 +239,68 @@ export default function Dashboard() {
 
     const shiftLabel = shiftLabels[shift] || shift;
 
-    // Log para debug
-    console.log('Rendering event:', { worksiteName, pairLabel, shift, shiftLabel });
+    console.log('Rendering event content:', { worksiteName, pairLabel, shift, shiftLabel, members, note });
 
-    return (
-      <div className="fc-event-main-frame" style={{ padding: '2px 4px' }}>
-        <div style={{ 
-          display: 'inline-block',
-          padding: '2px 6px',
-          marginBottom: '2px',
-          borderRadius: '3px',
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          color: '#1e293b',
-          fontSize: '10px',
-          fontWeight: 600
-        }}>
-          {shiftLabel}
-        </div>
-        <div style={{ 
-          fontSize: '12px', 
-          fontWeight: 600,
-          color: '#ffffff',
-          marginBottom: '1px',
-          textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-        }}>
-          {worksiteName}
-        </div>
-        <div style={{ 
-          fontSize: '11px',
-          color: '#ffffff',
-          opacity: 0.95,
-          textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-        }}>
-          {pairLabel}
-        </div>
-        {members && members.length > 0 && (
-          <div style={{ 
-            fontSize: '10px',
-            color: '#ffffff',
-            opacity: 0.85,
-            marginTop: '1px',
-            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-          }}>
-            {members.join(", ")}
+    // Retornar objeto simples para FullCalendar v6
+    return {
+      html: `
+        <div style="padding: 4px; height: 100%; display: flex; flex-direction: column; gap: 2px;">
+          <div style="
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background-color: rgba(255, 255, 255, 0.95);
+            color: #1e293b;
+            font-size: 10px;
+            font-weight: 600;
+            margin-bottom: 2px;
+          ">
+            ${shiftLabel}
           </div>
-        )}
-        {note && (
-          <div style={{ 
-            fontSize: '10px',
-            color: '#ffffff',
-            opacity: 0.8,
-            fontStyle: 'italic',
-            marginTop: '1px',
-            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-          }}>
-            {note}
+          <div style="
+            font-size: 12px;
+            font-weight: 600;
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            line-height: 1.2;
+          ">
+            ${worksiteName}
           </div>
-        )}
-      </div>
-    );
+          <div style="
+            font-size: 11px;
+            color: #ffffff;
+            opacity: 0.95;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            line-height: 1.2;
+          ">
+            ${pairLabel}
+          </div>
+          ${members && members.length > 0 ? `
+            <div style="
+              font-size: 10px;
+              color: #ffffff;
+              opacity: 0.85;
+              text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+              line-height: 1.1;
+            ">
+              ${members.join(", ")}
+            </div>
+          ` : ''}
+          ${note ? `
+            <div style="
+              font-size: 9px;
+              color: #ffffff;
+              opacity: 0.8;
+              font-style: italic;
+              text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+              line-height: 1.1;
+            ">
+              ${note}
+            </div>
+          ` : ''}
+        </div>
+      `
+    };
   };
 
   return (
