@@ -12,7 +12,8 @@ import ptLocale from "@fullcalendar/core/locales/pt";
 import type { EventClickArg, EventDropArg, DatesSetArg } from "@fullcalendar/core";
 import type { DateClickArg } from "@fullcalendar/interaction";
 
-// No CSS imports needed - FullCalendar v6 injects styles automatically
+import '@fullcalendar/core/index.css';
+import '@fullcalendar/daygrid/index.css';
 import AssignmentModal from "@/components/AssignmentModal";
 import {
   Select,
