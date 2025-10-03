@@ -155,13 +155,12 @@ export default function Dashboard() {
 
         return {
           id: assignment.id,
-          start: assignment.date + "T00:00:00",
-          end: assignment.date + "T23:59:59",
+          start: new Date(assignment.date),
+          end: new Date(assignment.date),
           allDay: true,
           title: `${assignment.worksite.name} • ${assignment.pair.label}`,
           backgroundColor: color,
           borderColor: color,
-          display: "block",
           extendedProps: {
             shift: assignment.shift,
             note: assignment.note,
