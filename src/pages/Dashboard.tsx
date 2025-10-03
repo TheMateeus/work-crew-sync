@@ -155,7 +155,7 @@ export default function Dashboard() {
 
         return {
           id: assignment.id,
-          start: assignment.date.split("T")[0],
+          start: new Date(assignment.date),
           allDay: true,
           title: `${assignment.worksite.name} • ${assignment.pair.label}`,
           backgroundColor: color,
