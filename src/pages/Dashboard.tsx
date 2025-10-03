@@ -11,6 +11,10 @@ import interactionPlugin from "@fullcalendar/interaction";
 import ptLocale from "@fullcalendar/core/locales/pt";
 import type { EventClickArg, EventDropArg, DatesSetArg } from "@fullcalendar/core";
 import type { DateClickArg } from "@fullcalendar/interaction";
+
+// Import FullCalendar styles
+import "@fullcalendar/core/index.css";
+import "@fullcalendar/daygrid/index.css";
 import AssignmentModal from "@/components/AssignmentModal";
 import {
   Select,
@@ -342,12 +346,12 @@ export default function Dashboard() {
           initialView="dayGridMonth"
           locale={ptLocale}
           firstDay={1}
-          height="auto"
+          contentHeight="auto"
           headerToolbar={false}
           editable={canEdit}
           selectable={canEdit}
           selectMirror={true}
-          dayMaxEvents={true}
+          dayMaxEvents={4}
           weekends={true}
           events={fetchEvents}
           eventContent={renderEventContent}

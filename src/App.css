@@ -1,5 +1,4 @@
-@import '@fullcalendar/core/main.css';
-@import '@fullcalendar/daygrid/main.css';
+/* FullCalendar styles are imported via the packages themselves */
 
 #root {
   width: 100%;
@@ -10,25 +9,24 @@
 /* FullCalendar customizations */
 .fc {
   font-family: inherit;
+  font-size: 14px;
 }
 
-.fc .fc-button {
-  background-color: hsl(var(--primary));
-  border-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border-color: hsl(var(--border));
 }
 
-.fc .fc-button:hover:not(:disabled) {
-  background-color: hsl(var(--primary) / 0.9);
-  border-color: hsl(var(--primary) / 0.9);
-}
-
-.fc .fc-button:disabled {
-  opacity: 0.5;
+.fc-theme-standard .fc-scrollgrid {
+  border-color: hsl(var(--border));
 }
 
 .fc .fc-daygrid-day {
   cursor: pointer;
+}
+
+.fc .fc-daygrid-day:hover {
+  background-color: hsl(var(--accent) / 0.1);
 }
 
 .fc .fc-daygrid-day-number {
@@ -42,34 +40,48 @@
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.75rem;
-  padding: 8px 4px;
+  padding: 12px 8px;
   color: hsl(var(--foreground));
 }
 
 .fc .fc-daygrid-day.fc-day-today {
-  background-color: hsl(var(--accent) / 0.3);
+  background-color: hsl(var(--accent) / 0.2);
+}
+
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  color: hsl(var(--primary));
+  font-weight: 700;
 }
 
 .fc .fc-event {
-  border-radius: 4px;
-  margin-bottom: 2px;
-  border-width: 1px;
+  border-radius: 6px;
+  margin-bottom: 3px;
+  border-width: 2px;
   border-style: solid;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fc .fc-event:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .fc .fc-daygrid-event {
-  padding: 2px 4px;
+  padding: 4px 6px;
+  white-space: normal;
 }
 
 .fc .fc-daygrid-day-frame {
-  min-height: 100px;
+  min-height: 120px;
+  padding: 4px;
 }
 
-.fc-theme-standard td,
-.fc-theme-standard th {
-  border-color: hsl(var(--border));
+.fc .fc-daygrid-day-events {
+  margin-top: 2px;
 }
 
-.fc-theme-standard .fc-scrollgrid {
-  border-color: hsl(var(--border));
+.fc .fc-daygrid-event-harness {
+  margin-bottom: 2px;
 }
