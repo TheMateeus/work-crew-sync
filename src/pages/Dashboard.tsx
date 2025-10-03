@@ -259,15 +259,7 @@ export default function Dashboard() {
   };
 
   const renderEventContent = (arg: any) => {
-    const { shift, pairLabel, members } = arg.event.extendedProps;
-    
-    const shiftLabels: Record<string, string> = {
-      MORNING: "Manhã",
-      AFTERNOON: "Tarde",
-      FULL: "Integral",
-    };
-
-    const shiftLabel = shiftLabels[shift] || shift;
+    const { worksiteName, members } = arg.event.extendedProps;
     const membersText = members && members.length > 0 ? members.join(", ") : "";
 
     return {
@@ -286,7 +278,7 @@ export default function Dashboard() {
           overflow: hidden;
           text-overflow: ellipsis;
         ">
-          ${pairLabel} – ${shiftLabel}${membersText ? ` – ${membersText}` : ''}
+          ${worksiteName}${membersText ? ` – ${membersText}` : ''}
         </div>
       `
     };
