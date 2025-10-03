@@ -77,6 +77,9 @@ export default function Dashboard() {
   // NOVO: Estado para os eventos do calendário
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   
+  // Gatilho para forçar recarregamento dos eventos
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
+  
   const [worksites, setWorksites] = useState<Worksite[]>([]);
   const [pairs, setPairs] = useState<Pair[]>([]);
   
@@ -176,7 +179,7 @@ export default function Dashboard() {
     };
 
     loadEventsForCalendar();
-  }, [filterWorksite, filterPair, filterShift]);
+  }, [filterWorksite, filterPair, filterShift, refetchTrigger]);
 
   const fetchFilters = async () => {
     const [wsResult, pairResult] = await Promise.all([
@@ -233,15 +236,14 @@ export default function Dashboard() {
     setCurrentTitle(arg.view.title);
   };
 
+  const handleSaveSuccess = () => {
+    setModalOpen(false);
+    setRefetchTrigger(prev => prev + 1);
+    toast.success("Operação realizada com sucesso!");
+  };
+
   const refetchEvents = () => {
-    console.log('refetchEvents called');
-    // Força uma nova busca alterando os filtros (mesmo que sejam os mesmos valores)
-    // Ou podemos adicionar uma variável de estado para forçar reload
-    const calendarApi = calendarRef.current?.getApi();
-    if (calendarApi) {
-      // Recarrega a view atual, o que acionará nosso useEffect
-      calendarApi.refetchEvents();
-    }
+    setRefetchTrigger(prev => prev + 1);
   };
 
   const handlePrevMonth = () => {
@@ -440,7 +442,7 @@ export default function Dashboard() {
       <AssignmentModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSave={refetchEvents}
+        onSave={handleSaveSuccess}
         assignment={selectedAssignment}
         initialDate={selectedDate}
         canEdit={canEdit}
