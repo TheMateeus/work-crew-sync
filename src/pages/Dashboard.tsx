@@ -1,71 +1,266 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import ptLocale from "@fullcalendar/core/locales/pt";
+import type { EventClickArg, EventDropArg, DatesSetArg } from "@fullcalendar/core";
+import type { DateClickArg } from "@fullcalendar/interaction";
+import AssignmentModal from "@/components/AssignmentModal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Assignment {
   id: string;
   date: string;
   shift: string;
   note: string | null;
+  worksite_id: string;
+  pair_id: string;
   worksite: {
+    id: string;
     name: string;
   };
   pair: {
+    id: string;
     label: string;
+    members: {
+      employee: {
+        name: string;
+      };
+    }[];
   };
 }
 
+interface Worksite {
+  id: string;
+  name: string;
+}
+
+interface Pair {
+  id: string;
+  label: string;
+}
+
+// Gerar cor determinística por ID da obra
+function getWorksiteColor(worksiteId: string): string {
+  const hash = worksiteId.split("").reduce((acc, char) => {
+    return char.charCodeAt(0) + ((acc << 5) - acc);
+  }, 0);
+  
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 70%, 50%)`;
+}
+
 export default function Dashboard() {
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
   const { profile } = useAuth();
+  const calendarRef = useRef<FullCalendar>(null);
+  
+  const [currentTitle, setCurrentTitle] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  
+  const [worksites, setWorksites] = useState<Worksite[]>([]);
+  const [pairs, setPairs] = useState<Pair[]>([]);
+  
+  const [filterWorksite, setFilterWorksite] = useState<string>("all");
+  const [filterPair, setFilterPair] = useState<string>("all");
+  const [filterShift, setFilterShift] = useState<string>("all");
+
+  const canEdit = profile?.role === "ADMIN" || profile?.role === "MANAGER";
 
   useEffect(() => {
-    fetchAssignments();
+    fetchFilters();
   }, []);
 
-  const fetchAssignments = async () => {
+  const fetchFilters = async () => {
+    const [wsResult, pairResult] = await Promise.all([
+      supabase.from("worksites").select("id, name").order("name"),
+      supabase.from("pairs").select("id, label").order("label"),
+    ]);
+
+    if (wsResult.data) setWorksites(wsResult.data);
+    if (pairResult.data) setPairs(pairResult.data);
+  };
+
+  const fetchEvents = async (fetchInfo: any, successCallback: any, failureCallback: any) => {
     try {
-      const { data, error } = await supabase
+      setLoading(true);
+      const { start, end } = fetchInfo;
+      
+      const startStr = start.toISOString().split("T")[0];
+      const endStr = end.toISOString().split("T")[0];
+
+      let query = supabase
         .from("assignments")
         .select(`
-          *,
-          worksite:worksites(name),
-          pair:pairs(label)
+          id, date, shift, note, worksite_id, pair_id,
+          worksite:worksites(id, name),
+          pair:pairs(id, label, members:pair_members(employee:employees(name)))
         `)
-        .order("date", { ascending: true })
-        .limit(10);
+        .gte("date", startStr)
+        .lte("date", endStr);
+
+      if (filterWorksite !== "all") {
+        query = query.eq("worksite_id", filterWorksite);
+      }
+      if (filterPair !== "all") {
+        query = query.eq("pair_id", filterPair);
+      }
+      if (filterShift !== "all") {
+        query = query.eq("shift", filterShift as Database["public"]["Enums"]["shift"]);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
-      setAssignments(data || []);
+
+      const events = (data || []).map((assignment: Assignment) => {
+        const color = getWorksiteColor(assignment.worksite.id);
+        const members = assignment.pair.members
+          .map((m) => m.employee.name)
+          .filter(Boolean);
+
+        return {
+          id: assignment.id,
+          start: assignment.date,
+          allDay: true,
+          title: `${assignment.worksite.name} • ${assignment.pair.label}`,
+          backgroundColor: color,
+          borderColor: color,
+          extendedProps: {
+            shift: assignment.shift,
+            note: assignment.note,
+            worksiteId: assignment.worksite.id,
+            pairId: assignment.pair.id,
+            worksiteName: assignment.worksite.name,
+            pairLabel: assignment.pair.label,
+            members,
+            rawAssignment: assignment,
+          },
+        };
+      });
+
+      successCallback(events);
     } catch (error: any) {
       toast.error("Erro ao carregar escalas: " + error.message);
+      failureCallback(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("pt-BR");
+  const handleDateClick = (info: DateClickArg) => {
+    if (!canEdit) return;
+    setSelectedAssignment(null);
+    setSelectedDate(info.dateStr);
+    setModalOpen(true);
   };
 
-  const formatShift = (shift: string) => {
-    const shifts: Record<string, string> = {
+  const handleEventClick = (info: EventClickArg) => {
+    const assignment = info.event.extendedProps.rawAssignment as Assignment;
+    setSelectedAssignment(assignment);
+    setSelectedDate("");
+    setModalOpen(true);
+  };
+
+  const handleEventDrop = async (info: EventDropArg) => {
+    if (!canEdit) {
+      info.revert();
+      return;
+    }
+
+    const newDate = info.event.startStr;
+    const id = info.event.id;
+
+    const { error } = await supabase
+      .from("assignments")
+      .update({ date: newDate })
+      .eq("id", id);
+
+    if (error) {
+      info.revert();
+      if (error.message.includes("duplicate") || error.message.includes("unique")) {
+        toast.error("Conflito: já existe escala para esta dupla/obra/turno neste dia");
+      } else {
+        toast.error("Erro ao mover escala: " + error.message);
+      }
+    } else {
+      toast.success("Escala movida com sucesso");
+      refetchEvents();
+    }
+  };
+
+  const handleDatesSet = (arg: DatesSetArg) => {
+    setCurrentTitle(arg.view.title);
+  };
+
+  const refetchEvents = () => {
+    calendarRef.current?.getApi().refetchEvents();
+  };
+
+  const handlePrevMonth = () => {
+    calendarRef.current?.getApi().prev();
+  };
+
+  const handleNextMonth = () => {
+    calendarRef.current?.getApi().next();
+  };
+
+  const handleToday = () => {
+    calendarRef.current?.getApi().today();
+  };
+
+  const renderEventContent = (arg: any) => {
+    const { shift, worksiteName, pairLabel, members, note } = arg.event.extendedProps;
+    
+    const shiftLabels: Record<string, string> = {
       MORNING: "Manhã",
       AFTERNOON: "Tarde",
       FULL: "Integral",
     };
-    return shifts[shift] || shift;
+
+    const shiftLabel = shiftLabels[shift] || shift;
+
+    return (
+      <div className="p-1 space-y-0.5 cursor-pointer hover:opacity-90 transition-opacity">
+        <div className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-white/90 text-slate-800">
+          {shiftLabel}
+        </div>
+        <div className="text-xs font-semibold text-white truncate">
+          {worksiteName}
+        </div>
+        <div className="text-[11px] text-white/90 truncate">
+          {pairLabel}
+        </div>
+        {members && members.length > 0 && (
+          <div className="text-[10px] text-white/80 truncate">
+            {members.join(", ")}
+          </div>
+        )}
+        {note && (
+          <div className="text-[10px] text-white/70 italic truncate">
+            {note}
+          </div>
+        )}
+      </div>
+    );
   };
 
-  const canEdit = profile?.role === "ADMIN" || profile?.role === "MANAGER";
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Calendário de Escalas</h1>
@@ -74,60 +269,105 @@ export default function Dashboard() {
           </p>
         </div>
         {canEdit && (
-          <Button>
+          <Button onClick={() => { setSelectedAssignment(null); setSelectedDate(""); setModalOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" />
             Nova Escala
           </Button>
         )}
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Carregando escalas...</p>
-          </div>
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-card p-4 rounded-lg border">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={handlePrevMonth}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" onClick={handleToday}>
+            Hoje
+          </Button>
+          <Button variant="outline" size="icon" onClick={handleNextMonth}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <h2 className="text-lg font-semibold ml-2">{currentTitle}</h2>
         </div>
-      ) : assignments.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground mb-4">Nenhuma escala cadastrada</p>
-            {canEdit && (
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Criar primeira escala
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {assignments.map((assignment) => (
-            <Card key={assignment.id}>
-              <CardHeader>
-                <CardTitle className="text-lg">{assignment.worksite.name}</CardTitle>
-                <CardDescription>
-                  {formatDate(assignment.date)} - {formatShift(assignment.shift)}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center text-sm">
-                    <span className="font-medium mr-2">Dupla:</span>
-                    <span className="text-muted-foreground">{assignment.pair.label}</span>
-                  </div>
-                  {assignment.note && (
-                    <div className="text-sm">
-                      <span className="font-medium">Observação:</span>
-                      <p className="text-muted-foreground mt-1">{assignment.note}</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+
+        <div className="flex flex-wrap gap-2">
+          <Select value={filterWorksite} onValueChange={(v) => { setFilterWorksite(v); refetchEvents(); }}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Todas as obras" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as obras</SelectItem>
+              {worksites.map((ws) => (
+                <SelectItem key={ws.id} value={ws.id}>
+                  {ws.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterPair} onValueChange={(v) => { setFilterPair(v); refetchEvents(); }}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Todas as duplas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as duplas</SelectItem>
+              {pairs.map((pair) => (
+                <SelectItem key={pair.id} value={pair.id}>
+                  {pair.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterShift} onValueChange={(v) => { setFilterShift(v); refetchEvents(); }}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Todos turnos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos turnos</SelectItem>
+              <SelectItem value="MORNING">Manhã</SelectItem>
+              <SelectItem value="AFTERNOON">Tarde</SelectItem>
+              <SelectItem value="FULL">Integral</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      )}
+      </div>
+
+      {/* Calendar */}
+      <div className="bg-card rounded-lg border p-4">
+        <FullCalendar
+          ref={calendarRef}
+          plugins={[dayGridPlugin, interactionPlugin]}
+          initialView="dayGridMonth"
+          locale={ptLocale}
+          firstDay={1}
+          height="auto"
+          headerToolbar={false}
+          editable={canEdit}
+          selectable={canEdit}
+          selectMirror={true}
+          dayMaxEvents={true}
+          weekends={true}
+          events={fetchEvents}
+          eventContent={renderEventContent}
+          dateClick={handleDateClick}
+          eventClick={handleEventClick}
+          eventDrop={handleEventDrop}
+          datesSet={handleDatesSet}
+          eventClassNames="shadow-sm"
+          dayCellClassNames="hover:bg-accent/50 transition-colors"
+        />
+      </div>
+
+      <AssignmentModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={refetchEvents}
+        assignment={selectedAssignment}
+        initialDate={selectedDate}
+        canEdit={canEdit}
+      />
     </div>
   );
 }
