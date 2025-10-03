@@ -1,4 +1,14 @@
-/* FullCalendar styles are imported via the packages themselves */
+/* FullCalendar Base Styles - Minimal required for rendering */
+:root {
+  --fc-border-color: hsl(var(--border));
+  --fc-button-bg-color: hsl(var(--primary));
+  --fc-button-border-color: hsl(var(--primary));
+  --fc-button-hover-bg-color: hsl(var(--primary) / 0.9);
+  --fc-button-active-bg-color: hsl(var(--primary) / 0.8);
+  --fc-page-bg-color: hsl(var(--background));
+  --fc-neutral-bg-color: hsl(var(--muted));
+  --fc-today-bg-color: hsl(var(--accent) / 0.2);
+}
 
 #root {
   width: 100%;
@@ -6,12 +16,148 @@
   padding: 0;
 }
 
-/* FullCalendar customizations */
+/* FullCalendar Core Styles */
 .fc {
+  box-sizing: border-box;
+  font-size: 1em;
   font-family: inherit;
-  font-size: 14px;
 }
 
+.fc *,
+.fc *:before,
+.fc *:after {
+  box-sizing: inherit;
+}
+
+.fc table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 1em;
+}
+
+.fc th {
+  text-align: center;
+}
+
+.fc th,
+.fc td {
+  vertical-align: top;
+  padding: 0;
+}
+
+.fc a[data-navlink] {
+  cursor: pointer;
+}
+
+.fc .fc-scrollgrid {
+  border-collapse: separate;
+  border-right-width: 0;
+  border-bottom-width: 0;
+}
+
+.fc .fc-scrollgrid-liquid {
+  height: 100%;
+}
+
+.fc .fc-scrollgrid-section > * {
+  border-left-width: 0;
+  border-top-width: 0;
+}
+
+.fc .fc-scrollgrid-section-liquid > td {
+  height: 100%;
+}
+
+.fc .fc-daygrid-body {
+  width: 100%;
+}
+
+.fc .fc-daygrid-day-frame {
+  position: relative;
+  min-height: 120px;
+  padding: 4px;
+}
+
+.fc .fc-daygrid-day-top {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.fc .fc-day-other .fc-daygrid-day-top {
+  opacity: 0.3;
+}
+
+.fc .fc-daygrid-day-events {
+  margin-top: 2px;
+  padding: 2px;
+}
+
+.fc .fc-daygrid-event-harness {
+  position: relative;
+  margin-bottom: 3px !important;
+}
+
+.fc .fc-daygrid-event {
+  position: relative;
+  white-space: normal !important;
+  border-radius: 3px;
+  font-size: 0.85em;
+  padding: 4px 6px;
+  min-height: 80px !important;
+}
+
+.fc .fc-event {
+  display: block;
+  font-size: 0.85em;
+  line-height: 1.3;
+  border-radius: 6px;
+  border-width: 2px;
+  border-style: solid;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 80px !important;
+  margin-bottom: 3px;
+}
+
+.fc .fc-event:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.fc .fc-event .fc-event-main {
+  position: relative;
+  z-index: 2;
+  color: inherit;
+}
+
+.fc .fc-event-title {
+  padding: 0 1px;
+  display: inline-block;
+  vertical-align: top;
+  font-weight: 600;
+}
+
+.fc .fc-view-harness {
+  flex-grow: 1;
+  position: relative;
+}
+
+.fc .fc-col-header-cell {
+  padding: 12px 8px;
+  background-color: hsl(var(--muted));
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  color: hsl(var(--foreground));
+}
+
+.fc .fc-col-header-cell-cushion {
+  display: inline-block;
+  padding: 2px 4px;
+}
+
+/* Theme customizations */
 .fc-theme-standard td,
 .fc-theme-standard th {
   border-color: hsl(var(--border));
@@ -35,15 +181,6 @@
   color: hsl(var(--foreground));
 }
 
-.fc .fc-col-header-cell {
-  background-color: hsl(var(--muted));
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  padding: 12px 8px;
-  color: hsl(var(--foreground));
-}
-
 .fc .fc-daygrid-day.fc-day-today {
   background-color: hsl(var(--accent) / 0.2);
 }
@@ -51,47 +188,4 @@
 .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
   color: hsl(var(--primary));
   font-weight: 700;
-}
-
-.fc .fc-event {
-  border-radius: 6px;
-  margin-bottom: 3px;
-  border-width: 2px;
-  border-style: solid;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 80px !important;
-}
-
-.fc .fc-event:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.fc .fc-daygrid-event {
-  padding: 4px 6px;
-  white-space: normal !important;
-  min-height: 80px !important;
-}
-
-.fc .fc-daygrid-event-harness {
-  margin-bottom: 3px !important;
-}
-
-.fc .fc-event-main {
-  color: inherit;
-}
-
-.fc .fc-daygrid-day-frame {
-  min-height: 120px;
-  padding: 4px;
-}
-
-.fc .fc-daygrid-day-events {
-  margin-top: 2px;
-}
-
-.fc .fc-event-title {
-  font-weight: 600;
 }

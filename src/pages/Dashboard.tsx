@@ -12,8 +12,7 @@ import ptLocale from "@fullcalendar/core/locales/pt";
 import type { EventClickArg, EventDropArg, DatesSetArg } from "@fullcalendar/core";
 import type { DateClickArg } from "@fullcalendar/interaction";
 
-import '@fullcalendar/core/index.css';
-import '@fullcalendar/daygrid/index.css';
+// FullCalendar styles handled by custom CSS in App.css
 import AssignmentModal from "@/components/AssignmentModal";
 import {
   Select,
@@ -91,7 +90,9 @@ export default function Dashboard() {
 
   // Refetch calendar events when filters change
   useEffect(() => {
-    refetchEvents();
+    if (calendarRef.current) {
+      refetchEvents();
+    }
   }, [filterWorksite, filterPair, filterShift]);
 
   const fetchFilters = async () => {
