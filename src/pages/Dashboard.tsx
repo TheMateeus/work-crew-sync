@@ -418,7 +418,7 @@ export default function Dashboard() {
           selectMirror={true}
           dayMaxEvents={4}
           weekends={true}
-          eventSources={[{ events: fetchEvents }]}
+          events={fetchEvents}
           eventDisplay="block"
           eventContent={renderEventContent}
           dateClick={handleDateClick}
