@@ -420,7 +420,7 @@ export default function Dashboard() {
           weekends={true}
           events={fetchEvents}
           eventDisplay="block"
-          eventContent={renderEventContent}
+          // eventContent={renderEventContent}
           dateClick={handleDateClick}
           eventClick={handleEventClick}
           eventDrop={handleEventDrop}
