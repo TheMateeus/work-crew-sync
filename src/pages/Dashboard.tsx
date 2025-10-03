@@ -155,12 +155,13 @@ export default function Dashboard() {
 
         return {
           id: assignment.id,
-          start: assignment.date,
-          end: assignment.date,
+          start: assignment.date + "T00:00:00",
+          end: assignment.date + "T23:59:59",
           allDay: true,
           title: `${assignment.worksite.name} • ${assignment.pair.label}`,
           backgroundColor: color,
           borderColor: color,
+          display: "block",
           extendedProps: {
             shift: assignment.shift,
             note: assignment.note,
@@ -419,6 +420,7 @@ export default function Dashboard() {
           dayMaxEvents={4}
           weekends={true}
           eventSources={[{ events: fetchEvents }]}
+          eventDisplay="block"
           eventContent={renderEventContent}
           dateClick={handleDateClick}
           eventClick={handleEventClick}
