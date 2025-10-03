@@ -73,6 +73,7 @@ export default function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
+  const [calendarKey, setCalendarKey] = useState(0); // Force re-render when filters change
   
   const [worksites, setWorksites] = useState<Worksite[]>([]);
   const [pairs, setPairs] = useState<Pair[]>([]);
@@ -98,12 +99,16 @@ export default function Dashboard() {
   };
 
   const fetchEvents = async (fetchInfo: any, successCallback: any, failureCallback: any) => {
+    console.log('fetchEvents called with:', { fetchInfo, filterWorksite, filterPair, filterShift });
+    
     try {
       setLoading(true);
       const { start, end } = fetchInfo;
       
       const startStr = start.toISOString().split("T")[0];
       const endStr = end.toISOString().split("T")[0];
+
+      console.log('Fetching events from', startStr, 'to', endStr);
 
       let query = supabase
         .from("assignments")
@@ -125,9 +130,15 @@ export default function Dashboard() {
         query = query.eq("shift", filterShift as Database["public"]["Enums"]["shift"]);
       }
 
+      console.log('Executing query...');
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Supabase returned:', data);
 
       const events = (data || []).map((assignment: Assignment) => {
         const color = getWorksiteColor(assignment.worksite.id);
@@ -155,8 +166,10 @@ export default function Dashboard() {
         };
       });
 
+      console.log('Processed events:', events);
       successCallback(events);
     } catch (error: any) {
+      console.error('Error in fetchEvents:', error);
       toast.error("Erro ao carregar escalas: " + error.message);
       failureCallback(error);
     } finally {
@@ -210,7 +223,9 @@ export default function Dashboard() {
   };
 
   const refetchEvents = () => {
-    calendarRef.current?.getApi().refetchEvents();
+    console.log('refetchEvents called');
+    // Force calendar to re-render with new key
+    setCalendarKey(prev => prev + 1);
   };
 
   const handlePrevMonth = () => {
@@ -381,6 +396,7 @@ export default function Dashboard() {
       {/* Calendar */}
       <div className="bg-card rounded-lg border p-4">
         <FullCalendar
+          key={calendarKey}
           ref={calendarRef}
           plugins={[dayGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
