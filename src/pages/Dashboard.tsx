@@ -73,7 +73,9 @@ export default function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
-  // Removed calendarKey; we'll use FullCalendar API to refetch events
+  
+  // NOVO: Estado para os eventos do calendário
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   
   const [worksites, setWorksites] = useState<Worksite[]>([]);
   const [pairs, setPairs] = useState<Pair[]>([]);
@@ -88,11 +90,92 @@ export default function Dashboard() {
     fetchFilters();
   }, []);
 
-  // Refetch calendar events when filters change
+  // NOVO: useEffect para buscar e processar eventos do Supabase
   useEffect(() => {
-    if (calendarRef.current) {
-      refetchEvents();
-    }
+    const loadEventsForCalendar = async () => {
+      console.log('loadEventsForCalendar called with filters:', { filterWorksite, filterPair, filterShift });
+      
+      try {
+        setLoading(true);
+        
+        // Pega as datas visíveis no calendário (ou define um padrão)
+        const calendarApi = calendarRef.current?.getApi();
+        const start = calendarApi ? calendarApi.view.activeStart : new Date();
+        const end = calendarApi ? calendarApi.view.activeEnd : new Date();
+        
+        const startStr = start.toISOString().split("T")[0];
+        const endStr = end.toISOString().split("T")[0];
+
+        console.log('Fetching events from', startStr, 'to', endStr);
+
+        let query = supabase
+          .from("assignments")
+          .select(`
+            id, date, shift, note, worksite_id, pair_id,
+            worksite:worksites(id, name),
+            pair:pairs(id, label, members:pair_members(employee:employees(name)))
+          `)
+          .gte("date", startStr)
+          .lte("date", endStr);
+
+        if (filterWorksite !== "all") {
+          query = query.eq("worksite_id", filterWorksite);
+        }
+        if (filterPair !== "all") {
+          query = query.eq("pair_id", filterPair);
+        }
+        if (filterShift !== "all") {
+          query = query.eq("shift", filterShift as Database["public"]["Enums"]["shift"]);
+        }
+
+        console.log('Executing query...');
+        const { data, error } = await query;
+
+        if (error) {
+          console.error('Supabase error:', error);
+          throw error;
+        }
+
+        console.log('Supabase returned:', data);
+
+        const processedEvents = (data || []).map((assignment: Assignment) => {
+          const color = getWorksiteColor(assignment.worksite.id);
+          const members = assignment.pair.members
+            .map((m) => m.employee.name)
+            .filter(Boolean);
+
+          return {
+            id: assignment.id,
+            start: assignment.date,
+            end: assignment.date,
+            allDay: true,
+            title: `${assignment.worksite.name} • ${assignment.pair.label}`,
+            backgroundColor: color,
+            borderColor: color,
+            extendedProps: {
+              shift: assignment.shift,
+              note: assignment.note,
+              worksiteId: assignment.worksite.id,
+              pairId: assignment.pair.id,
+              worksiteName: assignment.worksite.name,
+              pairLabel: assignment.pair.label,
+              members,
+              rawAssignment: assignment,
+            },
+          };
+        });
+
+        console.log('Processed events:', processedEvents);
+        setCalendarEvents(processedEvents);
+      } catch (error: any) {
+        console.error('Error in loadEventsForCalendar:', error);
+        toast.error("Erro ao carregar escalas: " + error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEventsForCalendar();
   }, [filterWorksite, filterPair, filterShift]);
 
   const fetchFilters = async () => {
@@ -103,87 +186,6 @@ export default function Dashboard() {
 
     if (wsResult.data) setWorksites(wsResult.data);
     if (pairResult.data) setPairs(pairResult.data);
-  };
-
-  const fetchEvents = async (fetchInfo: any, successCallback: any, failureCallback: any) => {
-    console.log('fetchEvents called with:', { fetchInfo, filterWorksite, filterPair, filterShift });
-    
-    try {
-      setLoading(true);
-      const { start, end } = fetchInfo;
-      
-      const startStr = start.toISOString().split("T")[0];
-      const endStr = end.toISOString().split("T")[0];
-
-      console.log('Fetching events from', startStr, 'to', endStr);
-
-      let query = supabase
-        .from("assignments")
-        .select(`
-          id, date, shift, note, worksite_id, pair_id,
-          worksite:worksites(id, name),
-          pair:pairs(id, label, members:pair_members(employee:employees(name)))
-        `)
-        .gte("date", startStr)
-        .lte("date", endStr);
-
-      if (filterWorksite !== "all") {
-        query = query.eq("worksite_id", filterWorksite);
-      }
-      if (filterPair !== "all") {
-        query = query.eq("pair_id", filterPair);
-      }
-      if (filterShift !== "all") {
-        query = query.eq("shift", filterShift as Database["public"]["Enums"]["shift"]);
-      }
-
-      console.log('Executing query...');
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-
-      console.log('Supabase returned:', data);
-
-      const events = (data || []).map((assignment: Assignment) => {
-        const color = getWorksiteColor(assignment.worksite.id);
-        const members = assignment.pair.members
-          .map((m) => m.employee.name)
-          .filter(Boolean);
-
-        return {
-          id: assignment.id,
-          start: assignment.date,
-          end: assignment.date,
-          allDay: true,
-          title: `${assignment.worksite.name} • ${assignment.pair.label}`,
-          backgroundColor: color,
-          borderColor: color,
-          extendedProps: {
-            shift: assignment.shift,
-            note: assignment.note,
-            worksiteId: assignment.worksite.id,
-            pairId: assignment.pair.id,
-            worksiteName: assignment.worksite.name,
-            pairLabel: assignment.pair.label,
-            members,
-            rawAssignment: assignment,
-          },
-        };
-      });
-
-      console.log('Processed events:', events);
-      console.log('Enviando eventos para FullCalendar:', events);
-      successCallback(events);
-    } catch (error: any) {
-      console.error('Error in fetchEvents:', error);
-      toast.error("Erro ao carregar escalas: " + error.message);
-      failureCallback(error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleDateClick = (info: DateClickArg) => {
@@ -233,8 +235,13 @@ export default function Dashboard() {
 
   const refetchEvents = () => {
     console.log('refetchEvents called');
-    const api = calendarRef.current?.getApi();
-    api?.refetchEvents();
+    // Força uma nova busca alterando os filtros (mesmo que sejam os mesmos valores)
+    // Ou podemos adicionar uma variável de estado para forçar reload
+    const calendarApi = calendarRef.current?.getApi();
+    if (calendarApi) {
+      // Recarrega a view atual, o que acionará nosso useEffect
+      calendarApi.refetchEvents();
+    }
   };
 
   const handlePrevMonth = () => {
@@ -418,9 +425,9 @@ export default function Dashboard() {
           selectMirror={true}
           dayMaxEvents={4}
           weekends={true}
-          events={fetchEvents}
+          events={calendarEvents}
           eventDisplay="block"
-          // eventContent={renderEventContent}
+          eventContent={renderEventContent}
           dateClick={handleDateClick}
           eventClick={handleEventClick}
           eventDrop={handleEventDrop}
