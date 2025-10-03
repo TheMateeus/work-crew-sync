@@ -155,7 +155,8 @@ export default function Dashboard() {
 
         return {
           id: assignment.id,
-          start: new Date(assignment.date),
+          start: assignment.date,
+          end: assignment.date,
           allDay: true,
           title: `${assignment.worksite.name} • ${assignment.pair.label}`,
           backgroundColor: color,
@@ -417,7 +418,7 @@ export default function Dashboard() {
           selectMirror={true}
           dayMaxEvents={4}
           weekends={true}
-          events={fetchEvents}
+          eventSources={[{ events: fetchEvents }]}
           eventContent={renderEventContent}
           dateClick={handleDateClick}
           eventClick={handleEventClick}
