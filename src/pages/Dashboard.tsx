@@ -155,7 +155,7 @@ export default function Dashboard() {
 
         return {
           id: assignment.id,
-          start: assignment.date,
+          start: assignment.date.split("T")[0],
           allDay: true,
           title: `${assignment.worksite.name} • ${assignment.pair.label}`,
           backgroundColor: color,
@@ -174,6 +174,7 @@ export default function Dashboard() {
       });
 
       console.log('Processed events:', events);
+      console.log('Enviando eventos para FullCalendar:', events);
       successCallback(events);
     } catch (error: any) {
       console.error('Error in fetchEvents:', error);
