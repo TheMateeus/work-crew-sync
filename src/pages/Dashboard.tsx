@@ -74,7 +74,7 @@ export default function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
-  const [calendarKey, setCalendarKey] = useState(0); // Force re-render when filters change
+  // Removed calendarKey; we'll use FullCalendar API to refetch events
   
   const [worksites, setWorksites] = useState<Worksite[]>([]);
   const [pairs, setPairs] = useState<Pair[]>([]);
@@ -88,6 +88,11 @@ export default function Dashboard() {
   useEffect(() => {
     fetchFilters();
   }, []);
+
+  // Refetch calendar events when filters change
+  useEffect(() => {
+    refetchEvents();
+  }, [filterWorksite, filterPair, filterShift]);
 
   const fetchFilters = async () => {
     const [wsResult, pairResult] = await Promise.all([
@@ -225,8 +230,8 @@ export default function Dashboard() {
 
   const refetchEvents = () => {
     console.log('refetchEvents called');
-    // Force calendar to re-render with new key
-    setCalendarKey(prev => prev + 1);
+    const api = calendarRef.current?.getApi();
+    api?.refetchEvents();
   };
 
   const handlePrevMonth = () => {
@@ -397,7 +402,7 @@ export default function Dashboard() {
       {/* Calendar */}
       <div className="bg-card rounded-lg border p-4">
         <FullCalendar
-          key={calendarKey}
+          
           ref={calendarRef}
           plugins={[dayGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
