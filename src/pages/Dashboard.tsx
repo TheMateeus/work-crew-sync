@@ -293,11 +293,15 @@ export default function Dashboard() {
           color: #ffffff;
           text-shadow: 0 1px 2px rgba(0,0,0,0.5);
           line-height: 1.2;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          width: 100%;
+          position: relative;
         ">
-          <span class="event-text" style="width: 100%;">${fullText}</span>
+          <span class="event-text" style="
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+          ">${fullText}</span>
         </div>
       `
     };
@@ -308,13 +312,19 @@ export default function Dashboard() {
     const textEl = arg.el.querySelector('.event-text');
     
     if (contentEl && textEl) {
-      // Check if text fits without overflow
-      const isFitting = textEl.scrollWidth <= textEl.clientWidth;
-      if (isFitting) {
-        contentEl.style.justifyContent = 'center';
-      } else {
-        contentEl.style.justifyContent = 'flex-start';
-      }
+      // Use requestAnimationFrame to ensure DOM is fully rendered
+      requestAnimationFrame(() => {
+        // Check if text is truncated (has overflow)
+        const isOverflowing = textEl.scrollWidth > textEl.clientWidth;
+        
+        if (!isOverflowing) {
+          // Text fits completely - center it
+          contentEl.style.justifyContent = 'center';
+        } else {
+          // Text is truncated - align left
+          contentEl.style.justifyContent = 'flex-start';
+        }
+      });
     }
   };
 
