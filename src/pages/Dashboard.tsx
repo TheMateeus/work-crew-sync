@@ -279,15 +279,15 @@ export default function Dashboard() {
   const renderEventContent = (arg: any) => {
     const { worksiteName, members } = arg.event.extendedProps;
     const membersText = members && members.length > 0 ? members.join(", ") : "";
+    const fullText = `${membersText ? `${membersText} – ` : ''}${worksiteName}`;
 
     return {
       html: `
-        <div style="
+        <div class="event-content" style="
           padding: 2px 4px;
           height: 100%;
           display: flex;
           align-items: center;
-          justify-content: center;
           font-size: 11px;
           font-weight: 500;
           color: #ffffff;
@@ -297,10 +297,25 @@ export default function Dashboard() {
           overflow: hidden;
           text-overflow: ellipsis;
         ">
-          ${membersText ? `${membersText} – ` : ''}${worksiteName}
+          <span class="event-text" style="width: 100%;">${fullText}</span>
         </div>
       `
     };
+  };
+
+  const handleEventDidMount = (arg: any) => {
+    const contentEl = arg.el.querySelector('.event-content');
+    const textEl = arg.el.querySelector('.event-text');
+    
+    if (contentEl && textEl) {
+      // Check if text fits without overflow
+      const isFitting = textEl.scrollWidth <= textEl.clientWidth;
+      if (isFitting) {
+        contentEl.style.justifyContent = 'center';
+      } else {
+        contentEl.style.justifyContent = 'flex-start';
+      }
+    }
   };
 
   return (
@@ -397,6 +412,7 @@ export default function Dashboard() {
           events={calendarEvents}
           eventDisplay="block"
           eventContent={renderEventContent}
+          eventDidMount={handleEventDidMount}
           dateClick={handleDateClick}
           eventClick={handleEventClick}
           eventDrop={handleEventDrop}
