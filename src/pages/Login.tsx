@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Building2 } from "lucide-react";
+import logoDark from "@/assets/logo-dark.png";
+import logoLight from "@/assets/logo-light.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -41,8 +42,17 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
-            <Building2 className="h-6 w-6 text-primary-foreground" />
+          <div className="mx-auto mb-4">
+            <img 
+              src={logoLight} 
+              alt="Insights Digital Agency" 
+              className="h-16 w-auto mx-auto dark:hidden"
+            />
+            <img 
+              src={logoDark} 
+              alt="Insights Digital Agency" 
+              className="h-16 w-auto mx-auto hidden dark:block"
+            />
           </div>
           <CardTitle className="text-2xl">Sistema de Gestão de Obras</CardTitle>
           <CardDescription>

@@ -14,6 +14,8 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import logoDark from "@/assets/logo-dark.png";
+import logoLight from "@/assets/logo-light.png";
 
 export function AppSidebar() {
   const { profile, signOut } = useAuth();
@@ -32,7 +34,18 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <h2 className="text-lg font-bold text-sidebar-foreground">Sistema de Obras</h2>
+        <div className="mb-3">
+          <img 
+            src={logoLight} 
+            alt="Insights Digital Agency" 
+            className="h-12 w-auto dark:hidden"
+          />
+          <img 
+            src={logoDark} 
+            alt="Insights Digital Agency" 
+            className="h-12 w-auto hidden dark:block"
+          />
+        </div>
         {profile && (
           <div className="mt-2 text-sm text-sidebar-foreground/80">
             <p className="font-medium">{profile.name}</p>
