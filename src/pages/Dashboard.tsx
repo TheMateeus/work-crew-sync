@@ -296,7 +296,7 @@ export default function Dashboard() {
           overflow: hidden;
           text-overflow: ellipsis;
         ">
-          ${worksiteName}${membersText ? ` – ${membersText}` : ''}
+          ${membersText ? `${membersText} – ` : ''}${worksiteName}
         </div>
       `
     };
