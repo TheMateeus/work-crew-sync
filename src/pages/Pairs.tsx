@@ -49,6 +49,7 @@ export default function Pairs() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingPair, setEditingPair] = useState<Pair | null>(null);
   const [formData, setFormData] = useState({
     label: "",
     employee1: "",
@@ -107,32 +108,74 @@ export default function Pairs() {
     }
 
     try {
-      // Create pair
-      const { data: pair, error: pairError } = await supabase
-        .from("pairs")
-        .insert([{ label: formData.label }])
-        .select()
-        .single();
+      if (editingPair) {
+        // Update pair
+        const { error: pairError } = await supabase
+          .from("pairs")
+          .update({ label: formData.label })
+          .eq("id", editingPair.id);
 
-      if (pairError) throw pairError;
+        if (pairError) throw pairError;
 
-      // Add members
-      const { error: membersError } = await supabase
-        .from("pair_members")
-        .insert([
-          { pair_id: pair.id, employee_id: formData.employee1 },
-          { pair_id: pair.id, employee_id: formData.employee2 },
-        ]);
+        // Delete old members
+        const { error: deleteError } = await supabase
+          .from("pair_members")
+          .delete()
+          .eq("pair_id", editingPair.id);
 
-      if (membersError) throw membersError;
+        if (deleteError) throw deleteError;
 
-      toast.success("Dupla cadastrada!");
+        // Add new members
+        const { error: membersError } = await supabase
+          .from("pair_members")
+          .insert([
+            { pair_id: editingPair.id, employee_id: formData.employee1 },
+            { pair_id: editingPair.id, employee_id: formData.employee2 },
+          ]);
+
+        if (membersError) throw membersError;
+
+        toast.success("Dupla atualizada!");
+      } else {
+        // Create pair
+        const { data: pair, error: pairError } = await supabase
+          .from("pairs")
+          .insert([{ label: formData.label }])
+          .select()
+          .single();
+
+        if (pairError) throw pairError;
+
+        // Add members
+        const { error: membersError } = await supabase
+          .from("pair_members")
+          .insert([
+            { pair_id: pair.id, employee_id: formData.employee1 },
+            { pair_id: pair.id, employee_id: formData.employee2 },
+          ]);
+
+        if (membersError) throw membersError;
+
+        toast.success("Dupla cadastrada!");
+      }
+
       setDialogOpen(false);
+      setEditingPair(null);
       setFormData({ label: "", employee1: "", employee2: "" });
       fetchData();
     } catch (error: any) {
       toast.error("Erro: " + error.message);
     }
+  };
+
+  const handleEdit = (pair: Pair) => {
+    setEditingPair(pair);
+    setFormData({
+      label: pair.label,
+      employee1: pair.pair_members[0]?.employee.id || "",
+      employee2: pair.pair_members[1]?.employee.id || "",
+    });
+    setDialogOpen(true);
   };
 
   return (
@@ -145,7 +188,10 @@ export default function Pairs() {
         {canEdit && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => setFormData({ label: "", employee1: "", employee2: "" })}>
+              <Button onClick={() => {
+                setEditingPair(null);
+                setFormData({ label: "", employee1: "", employee2: "" });
+              }}>
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Dupla
               </Button>
@@ -153,9 +199,9 @@ export default function Pairs() {
             <DialogContent>
               <form onSubmit={handleSubmit}>
                 <DialogHeader>
-                  <DialogTitle>Nova Dupla</DialogTitle>
+                  <DialogTitle>{editingPair ? "Editar Dupla" : "Nova Dupla"}</DialogTitle>
                   <DialogDescription>
-                    Crie uma dupla selecionando dois funcionários
+                    {editingPair ? "Edite" : "Crie"} uma dupla selecionando dois funcionários
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -207,7 +253,7 @@ export default function Pairs() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit">Criar Dupla</Button>
+                  <Button type="submit">{editingPair ? "Salvar" : "Criar Dupla"}</Button>
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -233,9 +279,20 @@ export default function Pairs() {
           pairs.map((pair) => (
             <Card key={pair.id}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  {pair.label}
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    {pair.label}
+                  </div>
+                  {canEdit && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(pair)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
