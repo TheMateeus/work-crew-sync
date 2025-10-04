@@ -18,28 +18,34 @@ export type Database = {
         Row: {
           created_at: string | null
           date: string
+          end_date: string
           id: string
           note: string | null
           pair_id: string | null
           shift: Database["public"]["Enums"]["shift"]
+          start_date: string
           worksite_id: string | null
         }
         Insert: {
           created_at?: string | null
           date: string
+          end_date: string
           id?: string
           note?: string | null
           pair_id?: string | null
           shift?: Database["public"]["Enums"]["shift"]
+          start_date: string
           worksite_id?: string | null
         }
         Update: {
           created_at?: string | null
           date?: string
+          end_date?: string
           id?: string
           note?: string | null
           pair_id?: string | null
           shift?: Database["public"]["Enums"]["shift"]
+          start_date?: string
           worksite_id?: string | null
         }
         Relationships: [

@@ -32,6 +32,8 @@ interface AssignmentModalProps {
   assignment?: {
     id: string;
     date: string;
+    start_date: string;
+    end_date: string;
     shift: string;
     worksite_id: string;
     pair_id: string;
@@ -64,7 +66,8 @@ export default function AssignmentModal({
   const [worksites, setWorksites] = useState<Worksite[]>([]);
   const [pairs, setPairs] = useState<Pair[]>([]);
   
-  const [date, setDate] = useState(initialDate || "");
+  const [startDate, setStartDate] = useState(initialDate || "");
+  const [endDate, setEndDate] = useState(initialDate || "");
   const [worksiteId, setWorksiteId] = useState("");
   const [pairId, setPairId] = useState("");
   const [shift, setShift] = useState<Shift>("FULL");
@@ -76,13 +79,15 @@ export default function AssignmentModal({
       fetchPairs();
       
       if (assignment) {
-        setDate(assignment.date);
+        setStartDate(assignment.start_date || assignment.date);
+        setEndDate(assignment.end_date || assignment.date);
         setWorksiteId(assignment.worksite_id);
         setPairId(assignment.pair_id);
         setShift(assignment.shift as Shift);
         setNote(assignment.note || "");
       } else if (initialDate) {
-        setDate(initialDate);
+        setStartDate(initialDate);
+        setEndDate(initialDate);
         setWorksiteId("");
         setPairId("");
         setShift("FULL");
@@ -123,8 +128,13 @@ export default function AssignmentModal({
   };
 
   const handleSave = async () => {
-    if (!date || !worksiteId || !pairId) {
+    if (!startDate || !endDate || !worksiteId || !pairId) {
       toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+
+    if (new Date(endDate) < new Date(startDate)) {
+      toast.error("A data final não pode ser anterior à data inicial");
       return;
     }
 
@@ -145,7 +155,9 @@ export default function AssignmentModal({
         const { error } = await supabase
           .from("assignments")
           .update({
-            date,
+            start_date: startDate,
+            end_date: endDate,
+            date: startDate, // mantém por compatibilidade
             worksite_id: worksiteId,
             pair_id: pairId,
             shift: shift as Shift,
@@ -167,7 +179,9 @@ export default function AssignmentModal({
         const { error } = await supabase
           .from("assignments")
           .insert({
-            date,
+            start_date: startDate,
+            end_date: endDate,
+            date: startDate, // mantém por compatibilidade
             worksite_id: worksiteId,
             pair_id: pairId,
             shift: shift as Shift,
@@ -235,15 +249,27 @@ export default function AssignmentModal({
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="date">Data</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              disabled={!canEdit || loading}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="start-date">Data Início</Label>
+              <Input
+                id="start-date"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                disabled={!canEdit || loading}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="end-date">Data Fim</Label>
+              <Input
+                id="end-date"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                disabled={!canEdit || loading}
+              />
+            </div>
           </div>
 
           <div className="grid gap-2">

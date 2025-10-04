@@ -25,6 +25,8 @@ import {
 interface Assignment {
   id: string;
   date: string;
+  start_date: string;
+  end_date: string;
   shift: string;
   note: string | null;
   worksite_id: string;
@@ -114,12 +116,12 @@ export default function Dashboard() {
         let query = supabase
           .from("assignments")
           .select(`
-            id, date, shift, note, worksite_id, pair_id,
+            id, date, start_date, end_date, shift, note, worksite_id, pair_id,
             worksite:worksites(id, name),
             pair:pairs(id, label, members:pair_members(employee:employees(name)))
           `)
-          .gte("date", startStr)
-          .lte("date", endStr);
+          .gte("start_date", startStr)
+          .lte("end_date", endStr);
 
         if (filterWorksite !== "all") {
           query = query.eq("worksite_id", filterWorksite);
@@ -147,10 +149,15 @@ export default function Dashboard() {
             .map((m) => m.employee.name)
             .filter(Boolean);
 
+          // Calcular a data final para o calendário (adicionar 1 dia para FullCalendar)
+          const endDate = new Date(assignment.end_date);
+          endDate.setDate(endDate.getDate() + 1);
+          const endDateStr = endDate.toISOString().split('T')[0];
+
           return {
             id: assignment.id,
-            start: assignment.date,
-            end: assignment.date,
+            start: assignment.start_date,
+            end: endDateStr, // FullCalendar usa end exclusivo
             allDay: true,
             title: `${assignment.worksite.name} • ${assignment.pair.label}`,
             backgroundColor: color,
@@ -211,18 +218,29 @@ export default function Dashboard() {
       return;
     }
 
-    const newDate = info.event.startStr;
-    const id = info.event.id;
+    const assignment = info.event.extendedProps.rawAssignment as Assignment;
+    const oldStartDate = new Date(assignment.start_date);
+    const oldEndDate = new Date(assignment.end_date);
+    const durationDays = Math.floor((oldEndDate.getTime() - oldStartDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    const newStartDate = info.event.startStr;
+    const newEndDateObj = new Date(newStartDate);
+    newEndDateObj.setDate(newEndDateObj.getDate() + durationDays);
+    const newEndDate = newEndDateObj.toISOString().split('T')[0];
 
     const { error } = await supabase
       .from("assignments")
-      .update({ date: newDate })
-      .eq("id", id);
+      .update({ 
+        start_date: newStartDate,
+        end_date: newEndDate,
+        date: newStartDate 
+      })
+      .eq("id", info.event.id);
 
     if (error) {
       info.revert();
       if (error.message.includes("duplicate") || error.message.includes("unique")) {
-        toast.error("Conflito: já existe escala para esta dupla/obra/turno neste dia");
+        toast.error("Conflito: já existe escala para esta dupla/obra/turno neste período");
       } else {
         toast.error("Erro ao mover escala: " + error.message);
       }
