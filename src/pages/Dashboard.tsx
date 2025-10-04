@@ -287,6 +287,7 @@ export default function Dashboard() {
           height: 100%;
           display: flex;
           align-items: center;
+          justify-content: center;
           font-size: 11px;
           font-weight: 500;
           color: #ffffff;
